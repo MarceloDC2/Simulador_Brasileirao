@@ -205,18 +205,25 @@ def main():
         st.dataframe(df_prob)
 
         # Mostrar gráficos - 20 gráficos, dois por linha
+        colors = ['#29681E', '#339523', '#3AC426', '#3FF527',
+                  '#27B4F5', '#2A91C4', '#286F94', '#224E68',
+                  '#69411A', '#965A1F', '#C47523', '#F59127',
+                  '#AC9B25', '#C42126', '#DCC727', '#F5DD27',
+                  '#AD261F', '#C52722', '#DD2724', '#F52727'
+                 ]
         st.subheader("Gráficos de distribuição por time")
         cols = st.columns(2)
         count = 0
         for time_name in df_prob.columns:
-          fig, ax = plt.subplots(figsize=(8, 3))
+          fig, ax = plt.subplots(figsize=(8, 8))
           # ax.plot(df_prob.index, df_prob[time_name], marker='o')          
-          ax.bar(df_prob.index, df_prob[time_name])
+          ax.bar(df_prob.index, df_prob[time_name], color=colors)
           ax.set_title(time_name, fontsize=16)
           ax.set_xlabel('Posição')
           ax.set_ylabel('Probabilidade (%)')
           ax.set_xticks(range(1, 21))
           ax.grid(True, linestyle='--', alpha=0.4)
+          plt.ylim(0, 100)
 
           cols[count % 2].pyplot(fig)
           plt.close(fig)
