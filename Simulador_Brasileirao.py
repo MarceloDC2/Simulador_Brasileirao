@@ -109,7 +109,7 @@ class Times():
     jogos_faltantes = JogosNaoRealizados()
 
     for jogo in self.todos_jogos:
-
+      if int(jogo['rodada']) < rodada_inicial: continue
       mandante  = Utilidades.LimpaTexto(jogo['mandante']['nome'])
       visitante = Utilidades.LimpaTexto(jogo['visitante']['nome'])
 
