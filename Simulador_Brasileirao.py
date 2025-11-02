@@ -1,6 +1,7 @@
 # URL da CBF:
 # https://www.cbf.com.br/api/proxy?path=/jogos/tabela-detalhada/campeonato/12606
-
+# URL da Gazeta Esportiva
+# https://footstats.gazetaesportiva.com/campeonatos/brasileiro-serie-a-2025/partidas/
 
 import streamlit as st
 import requests
@@ -8,10 +9,11 @@ from random import random
 import pandas as pd
 import matplotlib.pyplot as plt
 import Utilidades
-import pprint
+from pprint import pprint
 
 # ---------- Configurações iniciais ----------
 RODADA_FINAL = 38
+ANO          = '2025'
 
 class Times():
   def __init__(self):
@@ -34,17 +36,22 @@ class Times():
 
   def pega_times(self):
     """Pega a lista de times a partir da rodada 1."""
-    url = 'https://www.cbf.com.br/api/proxy?path=/jogos/tabela-detalhada/campeonato/12606'
+    # url = 'https://www.cbf.com.br/api/proxy?path=/jogos/tabela-detalhada/campeonato/12606'
+    url = f'https://footstats.gazetaesportiva.com/campeonatos/brasileiro-serie-a-{ANO}/partidas/'
     resp = requests.get(url)
     resp.raise_for_status()
-    dados = resp.json()
+    self.todos_jogos = resp.json()
     
-    self.todos_jogos = dados['Fase Única']['jogos']    
-    rodada_1 = [jogo for jogo in self.todos_jogos if jogo['rodada'] == '1']
+    rodada_1 = [jogo for jogo in self.todos_jogos if jogo['rodada'] == 1]
 
     for jogo in rodada_1:
-      self.pega_um_time(jogo['mandante']['nome'])
-      self.pega_um_time(jogo['visitante']['nome'])
+      try: # o cara muda o nome do campo !!!
+        self.pega_um_time(jogo['equipeMandante']['nome'])
+        self.pega_um_time(jogo['equipeVisitante']['nome'])
+      except:
+        self.pega_um_time(jogo['equipe_mandante']['nome'])
+        self.pega_um_time(jogo['equipe_visitante']['nome'])
+      # fim_try
     # next
     return
   # pega_times
@@ -110,21 +117,26 @@ class Times():
 
     for jogo in self.todos_jogos:
       if int(jogo['rodada']) < rodada_inicial: continue
-      mandante  = Utilidades.LimpaTexto(jogo['mandante']['nome'])
-      visitante = Utilidades.LimpaTexto(jogo['visitante']['nome'])
+      try: # o cara muda o nome dos campos !!!
+        mandante  = Utilidades.LimpaTexto(jogo['equipeMandante']['nome'])
+        visitante = Utilidades.LimpaTexto(jogo['equipeVisitante']['nome'])
+      except:
+        mandante  = Utilidades.LimpaTexto(jogo['equipe_mandante']['nome'])
+        visitante = Utilidades.LimpaTexto(jogo['equipe_visitante']['nome'])
+      # fim_try
 
-      if jogo['mandante']['gols'] == '':
+      if jogo['partidaEncerrada'] == False:
         jogos_faltantes.jogos.append([mandante, visitante, 0.0, 0.0, 0.0])
       else:
         self.times[mandante]['partidas_mandante']   += 1
         self.times[visitante]['partidas_visitante'] += 1
 
-        if int(jogo['mandante']['gols']) == int(jogo['visitante']['gols']):
+        if int(jogo['placar']['golsMandante']) == int(jogo['placar']['golsVisitante']):
           self.times[mandante]['empates_mandante'] += 1
           self.times[mandante]['pontos'] += 1
           self.times[visitante]['empates_visitante'] += 1
           self.times[visitante]['pontos'] += 1
-        elif int(jogo['mandante']['gols']) > int(jogo['visitante']['gols']):
+        elif int(jogo['placar']['golsMandante']) > int(jogo['placar']['golsVisitante']):
           self.times[mandante]['vitorias_mandante'] += 1
           self.times[mandante]['pontos'] += 3.01
           self.times[visitante]['derrotas_visitante'] += 1
@@ -177,7 +189,7 @@ def main():
 
     st.set_page_config(page_title="Simulador do Brasileirão", layout="wide")
     st.title("⚽ Simulador do Brasileirão")
-    st.title('base: CBF')
+    st.title('base: Gazeta Esportiva')
 
     with st.sidebar:
       st.header("Configurações")
