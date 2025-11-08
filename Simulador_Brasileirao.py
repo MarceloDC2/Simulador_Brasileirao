@@ -63,7 +63,7 @@ class Times():
 
     # Calcula probabilidades para cada jogo pendente
     for i, jogo in enumerate(jogos_faltantes.jogos):
-      mand, vis, _, _, _ = jogo
+      mand, vis, _, _, _, _ = jogo
       prob_man, prob_vis, prob_emp = probabilidade_resultado(
         self.times[mand]['vitorias_mandante'], self.times[mand]['empates_mandante'], self.times[mand]['derrotas_mandante'],
         self.times[vis]['vitorias_visitante'], self.times[vis]['empates_visitante'], self.times[vis]['derrotas_visitante']
@@ -85,7 +85,7 @@ class Times():
       dic_pontuacao_simulada = {um_time: self.times[um_time]['pontos'] for um_time in self.times}
 
       for jogo in jogos_faltantes.jogos:
-        mandante, visitante, prob_man, prob_vis, prob_emp = jogo
+        mandante, visitante, prob_man, prob_vis, prob_emp, data = jogo
         sorteio = random()
         if sorteio < prob_man:
           dic_pontuacao_simulada[mandante] += 3.01
@@ -126,7 +126,13 @@ class Times():
       # fim_try
 
       if jogo['partidaEncerrada'] == False:
-        jogos_faltantes.jogos.append([mandante, visitante, 0.0, 0.0, 0.0])
+        if jogo['dataDaPartida'] == None:
+          data_partida = '99999999'
+        else:
+          data_partida = str(jogo['dataDaPartida']['year']) + str(jogo['dataDaPartida']['monthValue']).zfill(2) + str(jogo['dataDaPartida']['dayOfMonth']).zfill(2)
+        # endif
+        jogos_faltantes.jogos.append([mandante, visitante, 0.0, 0.0, 0.0, data_partida])
+        
       else:
         self.times[mandante]['partidas_mandante']   += 1
         self.times[visitante]['partidas_visitante'] += 1
@@ -147,6 +153,7 @@ class Times():
         # endif
       # endif
     # next
+    jogos_faltantes.jogos = sorted(jogos_faltantes.jogos, key = lambda jogo: jogo[-1])
     return jogos_faltantes
   # preenche_times_e_jogos
 
@@ -154,7 +161,7 @@ class Times():
 
 class JogosNaoRealizados:
   def __init__(self):
-    self.jogos = []  # cada item: [mandante, visitante, prob_man, prob_vis_cumul, prob_total_cumul]
+    self.jogos = []  # cada item: [mandante, visitante, prob_man, prob_vis_cumul, prob_total_cumul, data_jogo]
   # __init__
 #fim classe JogosNaoRealizados
 
