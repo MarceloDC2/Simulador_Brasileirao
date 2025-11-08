@@ -109,7 +109,7 @@ class Times():
     sorted_columns = df_prob.iloc[0].sort_values(ascending=False).index
     df_prob = df_prob[sorted_columns]
     df_prob = df_prob.applymap(lambda x: round(x))
-    return df_prob
+    return df_prob, jogos_faltantes
   # executar_simulacao
 
   def preenche_times_e_jogos(self, rodada_inicial=1):
@@ -208,7 +208,7 @@ def main():
 
         times = Times()
         times.pega_times()
-        df_prob = times.executar_simulacao(rodada_inicial, nr_simulacoes, st_progress_callback=update_progress)
+        df_prob, jogos_faltantes = times.executar_simulacao(rodada_inicial, nr_simulacoes, st_progress_callback=update_progress)
 
         placeholder_status.success("Simulação concluída com sucesso!")
 
@@ -250,12 +250,49 @@ def main():
         resumo['Z4 (soma posições 17-20)'] = df_prob.loc[17:20].sum()
         st.table(resumo.sort_values('Campeonato (posição 1)', ascending=False))
 
+        # Probabiidade de cada jogo restante
+        st.subheader("Jogos Restantes")
+        cols = st.columns(1)
+        for jogo in jogos_faltantes.jogos:
+          # print(jogo)
+          vitoria_mandante  = round(100*(jogo[2]))
+          empate            = round(100*(1-jogo[3]))
+          vitoria_visitante = round(100*(jogo[3]-jogo[2]))
+          total = vitoria_mandante + empate + vitoria_visitante
+          if total < 100: empate += 1
+          valores = [vitoria_mandante,
+                     empate,
+                     vitoria_visitante]
+          rotulos = [str(valores[0]), str(valores[1]),str(valores[2])]
+          # rotulos = ['30', '50', '20']
+          cores = ['#0000CD', '#87CEFF', '#6C8631']
+          fig, ax = plt.subplots(figsize=(10, 0.5))
+          ax.set_xlim(0, 100) # Define o limite do eixo X para o total dos valores
+          ax.set_yticks([])    # Remove os ticks do eixo Y para parecer uma linha
+          ax.set_frame_on(False)
+          ax.set_title(f'{jogo[0]} X {jogo[1]}', pad=1)
+          ax.legend(loc='center left', bbox_to_anchor=(1, 0.5)) # Adiciona legenda fora do gráfico
+          largura_anterior = 0
+
+          for i, valor in enumerate(valores):
+            ax.barh(y=[0], width=valor, left=largura_anterior, color=cores[i], height=0.5, label=rotulos[i])
+            largura_anterior += valor
+          # endif
+
+          for i, valor in enumerate(valores):
+            ax.barh(y=[0], width=1, left=largura_anterior, color=cores[i], label=rotulos[i])
+            largura_anterior += valor
+          # next
+          cols[0].pyplot(fig)
+          plt.close(fig)
+        # next jogos_faltantes
+
       except requests.HTTPError as e:
         placeholder_status.error(f"Erro nas requisições HTTP: {e}")
       except Exception as e:
         placeholder_status.error(f"Erro inesperado: {e}")
       # fim_try
-    # endif
+    # endif run
 # fim main
 
 
