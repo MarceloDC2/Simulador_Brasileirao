@@ -1,3 +1,5 @@
+# URL da GLOBO
+# https://api.globoesporte.globo.com/tabela/d1a37fa4-e948-43a6-ba53-ab24ab3a45b1/fase/fase-unica-campeonato-brasileiro-2026/rodada/2/jogos/
 # URL da CBF:
 # https://www.cbf.com.br/api/proxy?path=/jogos/tabela-detalhada/campeonato/12606
 # URL da Gazeta Esportiva
@@ -13,7 +15,7 @@ from pprint import pprint
 
 # ---------- Configurações iniciais ----------
 RODADA_FINAL = 38
-ANO          = '2025'
+ANO          = '2026'
 
 class Times():
   def __init__(self):
@@ -21,7 +23,8 @@ class Times():
   # __init__
   
   def pega_um_time(self, nome):
-    self.times[Utilidades.LimpaTexto(nome)] = {
+    nome = Utilidades.LimpaTexto(nome)
+    self.times[nome] = {
         'partidas_mandante' : 0,
         'vitorias_mandante' : 0,
         'empates_mandante'  : 0,
@@ -32,27 +35,33 @@ class Times():
         'derrotas_visitante': 0,
         'pontos': 0.0,
     }
+    return nome
   # pega_um_time
 
   def pega_times(self):
     """Pega a lista de times a partir da rodada 1."""
     # url = 'https://www.cbf.com.br/api/proxy?path=/jogos/tabela-detalhada/campeonato/12606'
-    url = f'https://footstats.gazetaesportiva.com/campeonatos/brasileiro-serie-a-{ANO}/partidas/'
+    url = f'https://api.globoesporte.globo.com/tabela/d1a37fa4-e948-43a6-ba53-ab24ab3a45b1/fase/fase-unica-campeonato-brasileiro-{ANO}/rodada/1/jogos/'
     resp = requests.get(url)
     resp.raise_for_status()
     self.todos_jogos = resp.json()
     
-    rodada_1 = [jogo for jogo in self.todos_jogos if jogo['rodada'] == 1]
+    # rodada_1 = [jogo for jogo in self.todos_jogos if jogo['rodada'] == 1]
+    rodada_1 = [jogo for jogo in self.todos_jogos]
 
     for jogo in rodada_1:
-      try: # o cara muda o nome do campo !!!
-        self.pega_um_time(jogo['equipeMandante']['nome'])
-        self.pega_um_time(jogo['equipeVisitante']['nome'])
-      except:
-        self.pega_um_time(jogo['equipe_mandante']['nome'])
-        self.pega_um_time(jogo['equipe_visitante']['nome'])
-      # fim_try
+      self.pega_um_time(jogo['equipes']['mandante']['nome_popular'])
+      self.pega_um_time(jogo['equipes']['visitante']['nome_popular'])
     # next
+
+    for nr_rodada in range(2, 39):
+      rodada = str(nr_rodada)
+      url = f'https://api.globoesporte.globo.com/tabela/d1a37fa4-e948-43a6-ba53-ab24ab3a45b1/fase/fase-unica-campeonato-brasileiro-{ANO}/rodada/{rodada}/jogos/'
+      resp = requests.get(url)
+      resp.raise_for_status()
+      self.todos_jogos.extend(resp.json())
+    # next
+
     return
   # pega_times
 
@@ -115,34 +124,22 @@ class Times():
   def preenche_times_e_jogos(self, rodada_inicial=1):
     jogos_faltantes = JogosNaoRealizados()
 
-    for jogo in self.todos_jogos:
-      if int(jogo['rodada']) < rodada_inicial: continue
-      try: # o cara muda o nome dos campos !!!
-        mandante  = Utilidades.LimpaTexto(jogo['equipeMandante']['nome'])
-        visitante = Utilidades.LimpaTexto(jogo['equipeVisitante']['nome'])
-      except:
-        mandante  = Utilidades.LimpaTexto(jogo['equipe_mandante']['nome'])
-        visitante = Utilidades.LimpaTexto(jogo['equipe_visitante']['nome'])
-      # fim_try
+    for rodada, jogo in enumerate(self.todos_jogos):
+      if rodada+1 < rodada_inicial: continue
 
-      if jogo['partidaEncerrada'] == False:
-        if jogo['dataDaPartida'] == None:
-          data_partida = '99999999'
-        else:
-          data_partida = str(jogo['dataDaPartida']['year']) + str(jogo['dataDaPartida']['monthValue']).zfill(2) + str(jogo['dataDaPartida']['dayOfMonth']).zfill(2)
-        # endif
-        jogos_faltantes.jogos.append([mandante, visitante, 0.0, 0.0, 0.0, data_partida])
-        
-      else:
+      mandante  = self.pega_um_time(jogo['equipes']['mandante']['nome_popular'])
+      visitante = self.pega_um_time(jogo['equipes']['visitante']['nome_popular'])
+
+      if jogo['jogo_ja_comecou']:        
         self.times[mandante]['partidas_mandante']   += 1
         self.times[visitante]['partidas_visitante'] += 1
 
-        if int(jogo['placar']['golsMandante']) == int(jogo['placar']['golsVisitante']):
+        if int(jogo['placar_oficial_mandante']) == int(jogo['placar_oficial_visitante']):
           self.times[mandante]['empates_mandante'] += 1
           self.times[mandante]['pontos'] += 1
           self.times[visitante]['empates_visitante'] += 1
           self.times[visitante]['pontos'] += 1
-        elif int(jogo['placar']['golsMandante']) > int(jogo['placar']['golsVisitante']):
+        elif int(jogo['placar_oficial_mandante']) > int(jogo['placar_oficial_visitante']):
           self.times[mandante]['vitorias_mandante'] += 1
           self.times[mandante]['pontos'] += 3.01
           self.times[visitante]['derrotas_visitante'] += 1
@@ -151,6 +148,13 @@ class Times():
           self.times[visitante]['vitorias_visitante'] += 1
           self.times[visitante]['pontos'] += 3.01
         # endif
+      else:
+        if jogo['data_realizacao'] == None:
+          data_partida = '99999999'
+        else:
+          data_partida = jogo['data_realizacao'][:10]
+        # endif
+        jogos_faltantes.jogos.append([mandante, visitante, 0.0, 0.0, 0.0, data_partida])        
       # endif
     # next
     jogos_faltantes.jogos = sorted(jogos_faltantes.jogos, key = lambda jogo: jogo[-1])
@@ -196,7 +200,7 @@ def main():
 
     st.set_page_config(page_title="Simulador do Brasileirão", layout="wide")
     st.title("⚽ Simulador do Brasileirão")
-    st.title('base: Gazeta Esportiva')
+    st.title('base: Globo Esporte')
 
     with st.sidebar:
       st.header("Configurações")
