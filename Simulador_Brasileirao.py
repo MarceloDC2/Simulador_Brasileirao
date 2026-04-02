@@ -117,7 +117,7 @@ class Times():
     df_prob = 100 * df / nr_simulacoes
     sorted_columns = df_prob.iloc[0].sort_values(ascending=False).index
     df_prob = df_prob[sorted_columns]
-    df_prob = df_prob.applymap(lambda x: round(x))
+    df_prob = df_prob.round(0).astype(int)
     return df_prob, jogos_faltantes
   # executar_simulacao
 
