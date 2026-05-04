@@ -22,19 +22,21 @@ class Times():
     self.times = dict()
   # __init__
   
-  def pega_um_time(self, nome):
+  def pega_um_time(self, nome, zera_valores):
     nome = Utilidades.LimpaTexto(nome)
-    self.times[nome] = {
-        'partidas_mandante' : 0,
-        'vitorias_mandante' : 0,
-        'empates_mandante'  : 0,
-        'derrotas_mandante' : 0,
-        'partidas_visitante': 0,
-        'vitorias_visitante': 0,
-        'empates_visitante' : 0,
-        'derrotas_visitante': 0,
-        'pontos': 0.0,
-    }
+    if zera_valores:
+      self.times[nome] = {
+          'partidas_mandante' : 0,
+          'vitorias_mandante' : 0,
+          'empates_mandante'  : 0,
+          'derrotas_mandante' : 0,
+          'partidas_visitante': 0,
+          'vitorias_visitante': 0,
+          'empates_visitante' : 0,
+          'derrotas_visitante': 0,
+          'pontos': 0.0,
+      }
+    # endif
     return nome
   # pega_um_time
 
@@ -50,8 +52,8 @@ class Times():
     rodada_1 = [jogo for jogo in self.todos_jogos]
 
     for jogo in rodada_1:
-      self.pega_um_time(jogo['equipes']['mandante']['nome_popular'])
-      self.pega_um_time(jogo['equipes']['visitante']['nome_popular'])
+      self.pega_um_time(jogo['equipes']['mandante']['nome_popular'] , zera_valores=True)
+      self.pega_um_time(jogo['equipes']['visitante']['nome_popular'], zera_valores=True)
     # next
 
     for nr_rodada in range(2, 39):
@@ -127,8 +129,8 @@ class Times():
     for rodada, jogo in enumerate(self.todos_jogos):
       if rodada+1 < rodada_inicial: continue
 
-      mandante  = self.pega_um_time(jogo['equipes']['mandante']['nome_popular'])
-      visitante = self.pega_um_time(jogo['equipes']['visitante']['nome_popular'])
+      mandante  = self.pega_um_time(jogo['equipes']['mandante']['nome_popular'] , False)
+      visitante = self.pega_um_time(jogo['equipes']['visitante']['nome_popular'], False)
 
       if jogo['jogo_ja_comecou']:        
         self.times[mandante]['partidas_mandante']   += 1
