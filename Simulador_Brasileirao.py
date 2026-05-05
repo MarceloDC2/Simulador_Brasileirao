@@ -1,3 +1,6 @@
+# Para rodar localmente: streamlit run Simulador_Brasileirao.py
+# https://simuladorbrasileirao-pcgvypxgswmixv9yckpvse.streamlit.app/
+
 # URL da GLOBO
 # https://api.globoesporte.globo.com/tabela/d1a37fa4-e948-43a6-ba53-ab24ab3a45b1/fase/fase-unica-campeonato-brasileiro-2026/rodada/2/jogos/
 # URL da CBF:
@@ -126,8 +129,8 @@ class Times():
   def preenche_times_e_jogos(self, rodada_inicial=1):
     jogos_faltantes = JogosNaoRealizados()
 
-    for rodada, jogo in enumerate(self.todos_jogos):
-      if rodada+1 < rodada_inicial: continue
+    for nr_jogo, jogo in enumerate(self.todos_jogos):
+      if (nr_jogo + 10.5)/10 < rodada_inicial: continue
 
       mandante  = self.pega_um_time(jogo['equipes']['mandante']['nome_popular'] , False)
       visitante = self.pega_um_time(jogo['equipes']['visitante']['nome_popular'], False)
